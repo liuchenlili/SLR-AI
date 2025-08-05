@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: SLR-backend
+  # 数据库配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/slr
+    username: root
+    password: chen1022
+  servlet:
+    multipart:
+      max-file-size: 200MB
+      max-request-size: 200MB
+  mvc:
+    async:
+      request-timeout: 300000   # 300秒=5分钟（按需调大）
+
+server:
+  port: 8124
+  servlet:
+    context-path: /api
+# springdoc-openapi
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  api-docs:
+    path: /v3/api-docs
+  group-configs:
+    - group: 'default'
+      paths-to-match: '/**'
+      packages-to-scan: com.cnj.slrbackend.controller
+# knife4j
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+
+# MyBatis 配置
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: false
+    # 仅在开发环境开启日志
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    enable-sql-runner: true
+    db-config:
+      logic-delete-field: isDelete # 全局逻辑删除的实体字段名
+      logic-delete-value: 1 # 逻辑已删除值（默认为 1）
+      logic-not-delete-value: 0 # 逻辑未删除值（默认为 0）
+
+# 阿里云 AI 配置
+aliYunAi:
+  apiKey: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+coze:
+  timeout: 5000  # 超时时间(ms)
+  retry: 3       # 重试次数
+  pool:
+    max-connections: 100
+    acquire-timeout: 2000
+  bot-id: 7530583363246358582
+  access-token: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx

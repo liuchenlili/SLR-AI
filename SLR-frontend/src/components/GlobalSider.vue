@@ -32,7 +32,7 @@
                 placeholder="选择权重"
               />
             </a-form-item>
-            <a-form-item v-if="!isPracticePage" label="选择视频方式">
+            <a-form-item  label="选择视频方式">
               <a-select
                 v-model:value="configStore.selectedVideoStyle"
                 :options="videoStyleOptions"
@@ -40,65 +40,65 @@
               />
             </a-form-item>
 
-            <!-- 上传视频 -->
-            <a-form-item
-              v-if="!isPracticePage && configStore.selectedVideoStyle === '上传视频'"
-              label="上传视频"
-            >
-              <div style="display: flex; justify-content: center">
-                <a-upload :customRequest="handleUpload" :show-upload-list="false" class="w-full">
-                  <a-button style="width: 180px" block>上传视频</a-button>
-                </a-upload>
-              </div>
-            </a-form-item>
+<!--            &lt;!&ndash; 上传视频 &ndash;&gt;-->
+<!--            <a-form-item-->
+<!--              v-if=" configStore.selectedVideoStyle === '上传视频'"-->
+<!--              label="上传视频"-->
+<!--            >-->
+<!--              <div style="display: flex; justify-content: center">-->
+<!--                <a-upload :customRequest="handleUpload" :show-upload-list="false" class="w-full">-->
+<!--                  <a-button style="width: 180px" block>上传视频</a-button>-->
+<!--                </a-upload>-->
+<!--              </div>-->
+<!--            </a-form-item>-->
 
-            <!-- 录制视频 -->
-            <a-form-item
-              v-if="!isPracticePage && configStore.selectedVideoStyle === '录制视频'"
-              label="录制视频"
-            >
-              <video ref="videoRef" autoplay style="width: 100%; margin-bottom: 8px" />
-              <a-space direction="vertical" style="width: 100%">
-                <a-button block @click="startRecording" :disabled="recording">开始录制</a-button>
-                <a-button block @click="stopRecording" :disabled="!recording">停止录制</a-button>
-              </a-space>
-              <div v-if="configStore.recordedVideo" style="margin-top: 12px">
-                <div style="font-size: 13px; margin-bottom: 6px">录制预览：</div>
-                <video
-                  :src="configStore.recordedVideo && URL.createObjectURL(configStore.recordedVideo)"
-                  controls
-                  style="width: 100%; border-radius: 6px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06)"
-                />
-              </div>
-            </a-form-item>
+<!--            &lt;!&ndash; 录制视频 &ndash;&gt;-->
+<!--            <a-form-item-->
+<!--              v-if="configStore.selectedVideoStyle === '录制视频'"-->
+<!--              label="录制视频"-->
+<!--            >-->
+<!--              <video ref="videoRef" autoplay style="width: 100%; margin-bottom: 8px" />-->
+<!--              <a-space direction="vertical" style="width: 100%">-->
+<!--                <a-button block @click="startRecording" :disabled="recording">开始录制</a-button>-->
+<!--                <a-button block @click="stopRecording" :disabled="!recording">停止录制</a-button>-->
+<!--              </a-space>-->
+<!--              <div v-if="configStore.recordedVideo" style="margin-top: 12px">-->
+<!--                <div style="font-size: 13px; margin-bottom: 6px">录制预览：</div>-->
+<!--                <video-->
+<!--                  :src="configStore.recordedVideo && URL.createObjectURL(configStore.recordedVideo)"-->
+<!--                  controls-->
+<!--                  style="width: 100%; border-radius: 6px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06)"-->
+<!--                />-->
+<!--              </div>-->
+<!--            </a-form-item>-->
 
-            <!-- 测试集 -->
-            <a-form-item
-              v-if="!isPracticePage && configStore.selectedVideoStyle === 'CSL测试集'"
-              label="选择测试视频"
-            >
-              <a-select
-                v-model:value="configStore.selectedCSLVideo"
-                :options="cslVideoOptions"
-                placeholder="选择测试视频"
-              />
-            </a-form-item>
+<!--            &lt;!&ndash; 测试集 &ndash;&gt;-->
+<!--            <a-form-item-->
+<!--              v-if="configStore.selectedVideoStyle === 'CSL测试集'"-->
+<!--              label="选择测试视频"-->
+<!--            >-->
+<!--              <a-select-->
+<!--                v-model:value="configStore.selectedCSLVideo"-->
+<!--                :options="cslVideoOptions"-->
+<!--                placeholder="选择测试视频"-->
+<!--              />-->
+<!--            </a-form-item>-->
           </a-form>
 
-          <div v-if="!isPracticePage && videoPreviewUrl" style="padding: 16px 16px 0 16px">
-            <div style="font-size: 13px; margin-bottom: 6px">当前视频预览：</div>
-            <video
-              :src="videoPreviewUrl"
-              controls
-              style="width: 100%; border-radius: 6px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06)"
-            />
-          </div>
+<!--          <div v-if="videoPreviewUrl" style="padding: 16px 16px 0 16px">-->
+<!--            <div style="font-size: 13px; margin-bottom: 6px">当前视频预览：</div>-->
+<!--            <video-->
+<!--              :src="videoPreviewUrl"-->
+<!--              controls-->
+<!--              style="width: 100%; border-radius: 6px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06)"-->
+<!--            />-->
+<!--          </div>-->
         </div>
         <div style="flex: 1"></div>
         <!-- 实时识别 -->
-        <div style="padding: 24px 16px 20px 16px">
-          <a-button  type="primary"  block @click="startRealtime">实时识别</a-button>
-        </div>
+<!--        <div style="padding: 24px 16px 20px 16px">-->
+<!--          <a-button  type="primary"  block @click="startRealtime">实时识别</a-button>-->
+<!--        </div>-->
       </div>
     </a-layout-sider>
   </div>

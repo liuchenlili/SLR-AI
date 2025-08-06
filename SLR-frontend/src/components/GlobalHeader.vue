@@ -56,7 +56,6 @@ import { type MenuProps, message } from 'ant-design-vue'
 import { useRouter } from "vue-router";
 import { useLoginUserStore } from '@/stores/useLoginUserStore.ts'
 import { userLogout } from '@/api/userController.ts'
-import LearnPage from '@/pages/learn/LearnPage.vue'
 const router = useRouter();
 const loginUserStore = useLoginUserStore()
 
@@ -78,8 +77,8 @@ const items = computed<MenuProps['items']>(() => {
     {
       key: '/',
       icon: () => h(HomeOutlined),
-      label: '主页',
-      title: '主页',
+      label: '模型指标',
+      title: '模型指标',
     },
     {
       key: '/about',
@@ -94,20 +93,26 @@ const items = computed<MenuProps['items']>(() => {
     {
       key: '/learn',
       icon: () => h(BookOutlined),
-      label: '学习',
-      title: '学习',
+      label: '视频学习',
+      title: '视频学习',
     },
     {
       key: '/practice',
       icon: () => h(EditOutlined),
-      label: '练习',
-      title: '练习',
+      label: '智能手语识别',
+      title: '智能手语识别',
+    },
+    {
+      key: '/real',
+      icon: () => h(EditOutlined),
+      label: '实时识别',
+      title: '实时识别',
     },
     {
       key: '/practice/history',
       icon: () => h(HomeOutlined),
-      label: '练习记录',
-      title: '练习记录',
+      label: '识别记录',
+      title: '识别记录',
     },
   ];
 

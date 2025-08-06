@@ -1,98 +1,141 @@
 <template>
-  <div class="realtime-demo" v-if="store.selectedVideoStyle === '实时识别'">
-    <a-button block @click="stopRealtime" style="margin-bottom: 5px">退出实时识别</a-button>
-    <!-- 嵌入Streamlit实时识别界面 -->
-    <iframe
-      src="http://localhost:8501"
-      width="100%" height="900px" frameborder="0">
-    </iframe>
 
-  </div>
-  <div class="main-content" v-if="store.selectedVideoStyle !== '实时识别'" >
+  <div class="main-content"  >
     <h1 class="main-title">Sign Language Recognition System</h1>
     <div class="main-subtitle">{{ store.selectedModel }} 网络的展示</div>
-    <!--      <div v-if="store.selectedVideoStyle === '实时识别'" style="display:flex;justify-content:center;align-items:flex-start;margin-top:18px;">-->
-<!--        <div style="width:80%;max-width:900px;">-->
-<!--          <div style="display:flex;justify-content:space-between;font-size:2rem;font-weight:600;margin-bottom:8px;">-->
-<!--            <span>预测词汇</span>-->
-<!--            <span>Confidence Level</span>-->
-<!--            <span>FPS</span>-->
-<!--          </div>-->
-<!--          <div style="display:flex;justify-content:space-between;align-items:center;font-size:1.1rem;margin-bottom:12px;">-->
-<!--            <span style="width:180px;">{{ store.realtimeLabel || 'NULL' }}</span>-->
-<!--            <span style="width:180px;">{{store.realtimeConfidence ? store.realtimeLabel+(store.realtimeConfidence*100).toFixed(2)+'%' : "..." }}</span>-->
-<!--            <span style="width:120px;">{{ fpsText }}</span>-->
-<!--          </div>-->
-<!--          <div v-if="store.realtimeFrame" style="width:100%;text-align:center;">-->
-<!--            <img :src="store.realtimeFrame" style="max-width:100%;height:auto;min-height:400px;object-fit:contain;background:#f5f6fa;" />-->
-<!--            <div style="margin-top:8px;color:#888;">Real Video</div>-->
-<!--          </div>-->
+      <div style="display: flex; align-items: flex-end; margin-bottom: 20px;">
+        <!-- 左侧按钮 -->
+<!--        <div style="display: flex; align-items: flex-end;">-->
+<!--          <a-button-->
+<!--            type="primary"-->
+<!--            :loading="loading"-->
+<!--            style="margin-top: 20px"-->
+<!--            @click="handlePredict"-->
+<!--          >开始识别</a-button>-->
+<!--          <a-button-->
+<!--            danger-->
+<!--            style="margin-left: 12px;"-->
+<!--            @click="handleClearPrediction"-->
+<!--          >重置结果</a-button>-->
 <!--        </div>-->
-<!--      </div>-->
-      <div v-if="store.selectedVideoStyle !== '实时识别'">
-        <a-button
-          type="primary"
-          :loading="loading"
-          style="margin-bottom: 24px; margin-top: 20px"
-          @click="handlePredict"
-        >开始识别</a-button>
-        <a-button
-          danger
-          style="margin-left: 12px; margin-bottom: 24px;"
-          @click="handleClearPrediction"
-        >重置结果</a-button>
-        <a-tabs
-          v-if="store.selectedModel&&!store.prediction"
-          v-model:activeKey="activeKey"
-          @change="handleTabChange"
-          style="margin-top: 24px"
-        >
-          <a-tab-pane key="acc" tab="acc曲线图">
-            <EchartLine
-              ref="accLine"
-              :data-url="`/python/metrics/acc?model=${encodeURIComponent(store.selectedModel)}`"
+        <!-- 右侧表单 横向排布 -->
+        <a-form layout="inline" style="display: flex; align-items: flex-end;margin-top: 20px">
+          <a-form-item label="选择模型">
+            <a-select
+              v-model:value="store.selectedModel"
+              :options="modelOptions"
+              placeholder="选择模型"
+              style="width: 130px"
             />
-          </a-tab-pane>
-          <a-tab-pane key="loss" tab="loss曲线图">
-            <EchartLine
-              ref="lossLine"
-              :data-url="`/python/metrics/loss?model=${encodeURIComponent(store.selectedModel)}`"
+          </a-form-item>
+          <a-form-item label="选择权重">
+            <a-select
+              v-model:value="store.selectedWeight"
+              :options="weightOptions"
+              placeholder="选择权重"
+              style="width: 150px"
             />
-          </a-tab-pane>
-          <a-tab-pane key="net" tab="网络可视化">
-            <iframe class="net-frame" :srcdoc="netHtml" />
-          </a-tab-pane>
-          <a-tab-pane key="conf" tab="Confusion Matrix">
-            <img :src="confImage" class="conf-matrix" />
-          </a-tab-pane>
-        </a-tabs>
+          </a-form-item>
+          <div style="width: 100%;margin-top: 20px"></div>
+<!--          <a-form-item label="选择视频方式">-->
+<!--            <a-select-->
+<!--              v-model:value="store.selectedVideoStyle"-->
+<!--              :options="videoStyleOptions"-->
+<!--              placeholder="选择视频"-->
+<!--              style="width: 120px"-->
+<!--            />-->
+<!--          </a-form-item>-->
+<!--          <a-form-item v-if="store.selectedVideoStyle === '上传视频'" label="上传视频">-->
+<!--            <a-upload :customRequest="handleUpload" :show-upload-list="false">-->
+<!--              <a-button style="width: 120px">上传视频</a-button>-->
+<!--            </a-upload>-->
+<!--          </a-form-item>-->
+<!--          <a-form-item v-if="store.selectedVideoStyle === '录制视频'" label="录制视频">-->
+<!--            <a-button @click="startRecording" :disabled="recording" style="margin-right: 6px;">开始录制</a-button>-->
+<!--            <a-button @click="stopRecording" :disabled="!recording">停止录制</a-button>-->
+<!--          </a-form-item>-->
+<!--          <a-form-item v-if="store.selectedVideoStyle === 'CSL测试集'" label="选择测试视频">-->
+<!--            <a-select-->
+<!--              v-model:value="store.selectedCSLVideo"-->
+<!--              :options="cslVideoOptions"-->
+<!--              placeholder="选择测试视频"-->
+<!--              style="width: 120px"-->
+<!--            />-->
+<!--          </a-form-item>-->
 
-        <div v-if="store.prediction" style="margin-top: 36px">
-          <a-typography-title :level="5">识别结果</a-typography-title>
-          <a-list bordered :data-source="store.prediction.results">
-            <template #renderItem="{ item, index }">
-              <a-list-item>
-                <a
-                  :href="`https://www.spreadthesign.com/zh.hans.cn/search/?q=${item[0]}`"
-                  target="_blank"
-                >
-                  {{ index + 1 }}. {{ item[0] }} - 置信度: {{ item[1] }}
-                </a>
-              </a-list-item>
-            </template>
-          </a-list>
-        </div>
+        </a-form>
+<!--        &lt;!&ndash; 视频预览区（建议放在操作区下方，紧接其后） &ndash;&gt;-->
+<!--        <div v-if="videoPreviewUrl" style="padding: 16px 0 0 0; max-width: 60px;">-->
+<!--          <div style="font-size: 13px; margin-bottom: 6px;">当前视频预览：</div>-->
+<!--          <video-->
+<!--            :src="videoPreviewUrl"-->
+<!--            controls-->
+<!--            style="width: 100%; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,0.06)"-->
+<!--          />-->
+<!--        </div>-->
+<!--        <div v-if="store.recordedVideo">-->
+<!--          <div style="font-size: 13px; margin-bottom: 6px">录制预览：</div>-->
+<!--          <video-->
+<!--            :src="store.recordedVideo && URL.createObjectURL(store.recordedVideo)"-->
+<!--            controls-->
+<!--            style="width: 100%; border-radius: 6px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06)"-->
+<!--          />-->
+<!--        </div>-->
       </div>
 
-  </div>
+      <a-tabs
+        v-if="store.selectedModel&&!store.prediction"
+        v-model:activeKey="activeKey"
+        @change="handleTabChange"
+        style="margin-top: 24px"
+      >
+        <a-tab-pane key="acc" tab="acc曲线图">
+          <EchartLine
+            ref="accLine"
+            :data-url="`/python/metrics/acc?model=${encodeURIComponent(store.selectedModel)}`"
+          />
+        </a-tab-pane>
+        <a-tab-pane key="loss" tab="loss曲线图">
+          <EchartLine
+            ref="lossLine"
+            :data-url="`/python/metrics/loss?model=${encodeURIComponent(store.selectedModel)}`"
+          />
+        </a-tab-pane>
+        <a-tab-pane key="net" tab="网络可视化">
+          <iframe class="net-frame" :srcdoc="netHtml" />
+        </a-tab-pane>
+        <a-tab-pane key="conf" tab="Confusion Matrix">
+          <img :src="confImage" class="conf-matrix" />
+        </a-tab-pane>
+      </a-tabs>
+
+      <div v-if="store.prediction" style="margin-top: 36px">
+        <a-typography-title :level="5">识别结果</a-typography-title>
+        <a-list bordered :data-source="store.prediction.results">
+          <template #renderItem="{ item, index }">
+            <a-list-item>
+              <a
+                :href="`https://www.spreadthesign.com/zh.hans.cn/search/?q=${item[0]}`"
+                target="_blank"
+              >
+                {{ index + 1 }}. {{ item[0] }} - 置信度: {{ item[1] }}
+              </a>
+            </a-list-item>
+          </template>
+        </a-list>
+      </div>
+    </div>
+
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, nextTick, onBeforeUnmount, computed, onUnmounted } from 'vue'
-import { useConfigStore } from '@/stores/cslConfig'
+import { ref, watch, nextTick, computed } from 'vue'
+
 import EchartLine from '@/components/EchartLine.vue'
 import { getNetworkGraph, getConfusionMatrix, predict } from '@/api/predictionController.ts'
 import { message } from 'ant-design-vue'
+import router from '@/router'
+import { useConfigStore } from '@/stores/cslConfig.ts'
 
 const store = useConfigStore()
 const netHtml = ref('')
@@ -101,17 +144,34 @@ const loading = ref(false)
 const activeKey = ref('acc')
 const accLine = ref()
 const lossLine = ref()
-const realtimeLoading = ref(false)
-let ws: WebSocket | null = null
+let stream: MediaStream | null = null
+let recorder: MediaRecorder | null = null
 const fps = ref(0)
 let lastTime = Date.now()
+const recordedChunks = ref<Blob[]>([])
+const recording = ref(false)
+const videoRef = ref<HTMLVideoElement | null>(null)
+
 watch(() => store.realtimeFrame, () => {
   // 计算FPS
   const now = Date.now()
   fps.value = 1000 / (now - lastTime)
   lastTime = now
 })
-
+// 自动监听模型变化，加载权重并默认选中第一个权重
+const fetchWeights = async () => {
+  await store.fetchWeights()
+}
+watch(
+  () => store.selectedModel,
+  async (val) => {
+    if (val) {
+      await fetchWeights()
+      store.selectedWeight = store.weights[0] || ''
+    }
+  },
+  { immediate: true },
+)
 const fpsText = computed(() => store.isRealtime && fps.value > 0 ? fps.value.toFixed(1) + ' Vid/s' : '')
 const fetchData = async () => {
   if (!store.selectedModel) return
@@ -195,86 +255,73 @@ const handlePredict = async () => {
     loading.value = false
   }
 }
-// ======= 实时识别 WebSocket 相关 =======
-// const videoRef = ref<HTMLVideoElement|null>(null)
-// const ws = ref<WebSocket|null>(null)
-// const realtimeLabel = ref('')
-// const realtimeConfidence = ref(0)
-// const realtimeOn = ref(false)
-//
-// let captureTimer: any = null
-// const startRealtime = async () => {
-//   if (realtimeOn.value) return
-//   // 打开摄像头
-//   const stream = await navigator.mediaDevices.getUserMedia({ video: true })
-//   if (videoRef.value) videoRef.value.srcObject = stream
-//
-//   // 连接WebSocket
-//   ws.value = new WebSocket('ws://localhost:8000/ws/recognize')
-//   ws.value.onopen = () => {
-//     realtimeOn.value = true
-//     ws.value!.send(JSON.stringify({
-//       model: store.selectedModel,
-//       weight: store.selectedWeight,
-//       thres: store.realtimeThres
-//     }))
-//     // 定时采集帧并推送
-//     const canvas = document.createElement('canvas')
-//     canvas.width = 128
-//     canvas.height = 128
-//     const ctx = canvas.getContext('2d')
-//     captureTimer = setInterval(() => {
-//       if (videoRef.value && ctx) {
-//         ctx.drawImage(videoRef.value, 0, 0, 128, 128)
-//         canvas.toBlob((blob) => {
-//           if (!blob) return
-//           const reader = new FileReader()
-//           reader.onloadend = () => {
-//             // @ts-ignore
-//             ws.value && ws.value.send(JSON.stringify({ image: reader.result }))
-//           }
-//           reader.readAsDataURL(blob)
-//         }, 'image/jpeg', 0.85)
-//       }
-//     }, 40) // 25帧/s
-//     message.success('实时识别已开启')
-//   }
-//   ws.value.onmessage = (evt) => {
-//     const data = JSON.parse(evt.data)
-//     realtimeLabel.value = data.label
-//     realtimeConfidence.value = data.confidence
-//   }
-//   ws.value.onclose = () => {
-//     realtimeOn.value = false
-//     realtimeLabel.value = ''
-//     realtimeConfidence.value = 0
-//     if (videoRef.value?.srcObject) {
-//       // @ts-ignore
-//       videoRef.value.srcObject.getTracks().forEach((track: any) => track.stop())
-//     }
-//     if (captureTimer) clearInterval(captureTimer)
-//     message.info('实时识别已断开')
-//   }
-//   ws.value.onerror = () => {
-//     realtimeOn.value = false
-//     if (captureTimer) clearInterval(captureTimer)
-//     message.error('WebSocket连接失败')
-//   }
-// }
-//
-// const stopRealtime = () => {
-//   if (ws.value) ws.value.close()
-//   ws.value = null
-//   realtimeOn.value = false
-//   if (captureTimer) clearInterval(captureTimer)
-//   if (videoRef.value?.srcObject) {
-//     // @ts-ignore
-//     videoRef.value.srcObject.getTracks().forEach((track: any) => track.stop())
-//   }
-// }
-// onUnmounted(() => {
-//   stopRealtime()
-// })
+const modelOptions = computed(() =>
+  store.models.map((model) => ({ value: model, label: model })),
+)
+const weightOptions = computed(() =>
+  store.weights.map((weight) => ({ value: weight, label: weight })),
+)
+const videoStyleOptions = computed(() =>
+  store.videoStyles.map((style) => ({ value: style, label: style })),
+)
+const cslVideoOptions = computed(() =>
+  store.cslVideos.map((video) => ({ value: video, label: video })),
+)
+
+const handleUpload = async ({ file }: { file: File }) => {
+  store.setUploadedVideo(file)
+}
+const videoPreviewUrl = computed(() => {
+  if (store.selectedVideoStyle === '上传视频' && store.uploadedVideo) {
+    return URL.createObjectURL(store.uploadedVideo)
+  }
+  if (store.selectedVideoStyle === 'CSL测试集' && store.selectedCSLVideo) {
+    return `/data/ptov/${store.selectedCSLVideo}`
+  }
+  return ''
+})
+// ============= 录制相关 =============
+const startRecording = async () => {
+  stream = await navigator.mediaDevices.getUserMedia({ video: true })
+  if (videoRef.value) videoRef.value.srcObject = stream
+  recorder = new MediaRecorder(stream, { mimeType: 'video/webm' }) // webm格式
+  recordedChunks.value = []
+  recording.value = true
+  recorder.ondataavailable = (e: BlobEvent) => recordedChunks.value.push(e.data)
+  recorder.onstop = () => {
+    recording.value = false
+    if (stream) stream.getTracks().forEach((track) => track.stop())
+    const blob = new Blob(recordedChunks.value, { type: 'video/webm' })
+    if (blob.size < 1024) {
+      message.error('录制失败，文件为空')
+      return
+    }
+    store.setRecordedVideo(new File([blob], 'recorded.webm', { type: 'video/webm' }))
+  }
+  recorder.start()
+  message.success('开始录制')
+}
+
+const stopRecording = () => {
+  if (recorder && recording.value) {
+    recorder.stop()
+    message.success('录制结束')
+  }
+}
+
+const startRealtime = () => {
+  // 检查模型和权重是否已选择
+  if (!store.selectedModel || !store.selectedWeight) {
+    message.warning('请先选择模型和权重')
+    return
+  }
+  message.success('进入实时识别')
+  // 切换到实时识别模式
+  store.selectedVideoStyle = '实时识别'
+  router.push({
+    path: '/',
+  })
+}
 const stopRealtime = () => {
 
   store.selectedVideoStyle = '';

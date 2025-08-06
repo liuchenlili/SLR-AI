@@ -1,96 +1,230 @@
 <template>
-  <div class="practice-main">
+  <a-layout style="min-height: 100vh">
+    <GlobalSider class="sider" />
+    <!-- 主内容区 -->
+    <a-layout style="background: #fff; padding: 0 20px">
+      <a-layout-content style="margin: 24px">
+        <div class="practice-main">
+          <a-card
+            v-if="store.selectedVideoStyle === '录制视频'"
+            title="练习录制与智能建议"
+            :bordered="false"
+          >
+            <a-form layout="vertical">
+              <a-form-item label="练习目标">
+                <a-input
+                  v-model:value="targetText"
+                  placeholder="请输入本次练习目标，例如：团结"
+                  style="max-width: 340px"
+                />
+              </a-form-item>
 
-    <a-card title="练习录制与智能建议" :bordered="false">
-      <a-form layout="vertical">
-        <a-form-item label="练习目标">
-          <a-input
-            v-model:value="targetText"
-            placeholder="请输入本次练习目标，例如：团结"
-            style="max-width: 340px"
-          />
-        </a-form-item>
+              <a-form-item label="视频录制">
+                <video
+                  ref="videoRef"
+                  :src="previewUrl"
+                  :controls="!!previewUrl"
+                  autoplay
+                  style="
+                    width: 400px;
+                    max-width: 100%;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 8px #f0f1f2;
+                    margin-bottom: 8px;
+                  "
+                />
+                <a-space>
+                  <a-button type="primary" @click="startRecording" :disabled="recording"
+                    >开始录制</a-button
+                  >
+                  <a-button @click="stopRecording" :disabled="!recording">结束录制</a-button>
+                </a-space>
+              </a-form-item>
 
-        <a-form-item label="视频录制">
-          <video
-            ref="videoRef"
-            :src="previewUrl"
-            :controls="!!previewUrl"
-            autoplay
-            style="width: 400px;max-width:100%;border-radius:8px;box-shadow:0 2px 8px #f0f1f2;margin-bottom: 8px;"
-          />
-          <a-space>
-            <a-button type="primary" @click="startRecording" :disabled="recording"
-              >开始录制</a-button
-            >
-            <a-button @click="stopRecording" :disabled="!recording">结束录制</a-button>
-          </a-space>
-        </a-form-item>
+              <a-button
+                type="primary"
+                @click="submitPractice"
+                :loading="loading"
+                :disabled="!targetText || !recordedVideo"
+                style="margin-top: 12px"
+                >提交并获取智能建议</a-button
+              >
+            </a-form>
 
-<!--        <div v-if="recordedVideo" style="margin-bottom: 12px">-->
-<!--          <div style="font-size: 13px; margin-bottom: 4px">录制预览：</div>-->
-<!--          <video-->
-<!--            v-if="previewUrl"-->
-<!--            :src="previewUrl"-->
-<!--            controls-->
-<!--            style="-->
-<!--              width: 400px;-->
-<!--              max-width: 100%;-->
-<!--              border-radius: 8px;-->
-<!--              box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);-->
-<!--            "-->
-<!--          />-->
-<!--        </div>-->
+            <div v-if="aiAdvice || predictionParsed" style="margin-top: 24px">
+              <a-typography-title :level="5">算法预测结果</a-typography-title>
+              <div v-if="predictionParsed">
+                <a-list bordered :data-source="predictionParsed.results">
+                  <template #renderItem="{ item, index }">
+                    <a-list-item>
+                      <a
+                        :href="`https://www.spreadthesign.com/zh.hans.cn/search/?q=${item[0]}`"
+                        target="_blank"
+                      >
+                        {{ index + 1 }}. {{ item[0] }} - 置信度: {{ item[1] }}
+                      </a>
+                    </a-list-item>
+                  </template>
+                </a-list>
+              </div>
 
-        <a-button
-          type="primary"
-          @click="submitPractice"
-          :loading="loading"
-          :disabled="!targetText || !recordedVideo"
-          style="margin-top: 12px"
-          >提交并获取智能建议</a-button
-        >
-      </a-form>
-      <div v-if="aiAdvice || predictionParsed" style="margin-top: 24px">
-        <a-typography-title :level="5">算法预测结果</a-typography-title>
-        <div v-if="predictionParsed">
-          <a-list bordered :data-source="predictionParsed.results">
-            <template #renderItem="{ item, index }">
-              <a-list-item>
-                <a
-                  :href="`https://www.spreadthesign.com/zh.hans.cn/search/?q=${item[0]}`"
-                  target="_blank"
+              <a-typography-title :level="5" style="margin-top: 18px"
+                >AI教学建议</a-typography-title
+              >
+              <div style="background: #fafafa; padding: 14px 18px; border-radius: 6px">
+                <a-typography-paragraph>
+                  <div v-html="formatAdvice(aiAdvice)"></div>
+                </a-typography-paragraph>
+              </div>
+            </div>
+          </a-card>
+          <a-card
+            v-if="store.selectedVideoStyle === '上传视频'"
+            title="上传视频"
+            :bordered="false"
+            style="margin-bottom: 24px"
+          >
+            <a-form layout="vertical">
+              <a-form-item label="上传视频">
+                <div style="display: flex; justify-content: center">
+                  <a-upload :customRequest="handleUpload" :show-upload-list="false" class="w-full">
+                    <a-button style="width: 180px" block>上传视频</a-button>
+                  </a-upload>
+                </div>
+              </a-form-item>
+
+              <div v-if="videoPreviewUrl" style="margin-top: 16px">
+                <div style="font-size: 13px; margin-bottom: 6px">当前视频预览：</div>
+                <video
+                  :src="videoPreviewUrl"
+                  controls
+                  style="
+                    width: 320px;
+                    max-width: 100%;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 8px #f0f1f2;
+                  "
+                />
+              </div>
+              <div style="display: flex; align-items: flex-end; margin-bottom: 20px">
+                <!-- 左侧按钮 -->
+                <div style="display: flex; align-items: flex-end">
+                  <a-button
+                    type="primary"
+                    style="margin-top: 20px"
+                    @click="handlePredict"
+                    >开始识别</a-button
+                  >
+                  <a-button danger style="margin-left: 12px" @click="handleClearPrediction">重置结果</a-button>
+                  <a-button
+                    type="primary"
+                    :loading="loading"
+                    style="margin-top: 20px;margin-left: 12px"
+                    @click="handleAsk"
+                    :disabled="question==''"
+                  >获取智能评价</a-button>
+                </div>
+              </div>
+            </a-form>
+            <div v-if="store.prediction" style="margin-top: 36px">
+              <a-typography-title :level="5">识别结果</a-typography-title>
+              <a-list bordered :data-source="store.prediction.results">
+                <template #renderItem="{ item, index }">
+                  <a-list-item>
+                    <a
+                      :href="`https://www.spreadthesign.com/zh.hans.cn/search/?q=${item[0]}`"
+                      target="_blank"
+                    >
+                      {{ index + 1 }}. {{ item[0] }} - 置信度: {{ item[1] }}
+                    </a>
+                  </a-list-item>
+                </template>
+              </a-list>
+            </div>
+            <div v-if="answer" style="margin-top: 24px;">
+              <a-typography-title :level="5">AI答复</a-typography-title>
+              <div style="background: #fafafa; padding: 14px 18px; border-radius: 6px;">
+                <a-typography-paragraph>
+                  <div v-html="formatAnswer(answer)"></div>
+                </a-typography-paragraph>
+              </div>
+            </div>
+          </a-card>
+          <a-card
+            v-if="store.selectedVideoStyle === 'CSL测试集'"
+            title="选择测试视频"
+            :bordered="false"
+            style="margin-bottom: 24px"
+          >
+            <a-form layout="vertical">
+              <a-form-item label="选择测试视频">
+                <a-select
+                  v-model:value="store.selectedCSLVideo"
+                  :options="cslVideoOptions"
+                  placeholder="选择测试视频"
+                  style="width: 220px"
+                />
+              </a-form-item>
+
+              <div v-if="videoPreviewUrl" style="margin-top: 16px">
+                <div style="font-size: 13px; margin-bottom: 6px">当前视频预览：</div>
+                <video
+                  :src="videoPreviewUrl"
+                  controls
+                  style="
+                    width: 320px;
+                    max-width: 100%;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 8px #f0f1f2;
+                  "
+                />
+              </div>
+            </a-form>
+            <div style="display: flex; align-items: flex-end; margin-bottom: 20px">
+              <!-- 左侧按钮 -->
+              <div style="display: flex; align-items: flex-end">
+                <a-button
+                  type="primary"
+                  style="margin-top: 20px"
+                  @click="handlePredict"
+                  >开始识别</a-button
                 >
-                  {{ index + 1 }}. {{ item[0] }} - 置信度: {{ item[1] }}
-                </a>
-              </a-list-item>
-            </template>
-          </a-list>
-
+                <a-button danger style="margin-left: 12px" @click="handleClearPrediction"
+                  >重置结果</a-button
+                >
+              </div>
+            </div>
+            <div v-if="store.prediction" style="margin-top: 36px">
+              <a-typography-title :level="5">识别结果</a-typography-title>
+              <a-list bordered :data-source="store.prediction.results">
+                <template #renderItem="{ item, index }">
+                  <a-list-item>
+                    <a
+                      :href="`https://www.spreadthesign.com/zh.hans.cn/search/?q=${item[0]}`"
+                      target="_blank"
+                    >
+                      {{ index + 1 }}. {{ item[0] }} - 置信度: {{ item[1] }}
+                    </a>
+                  </a-list-item>
+                </template>
+              </a-list>
+            </div>
+          </a-card>
         </div>
+      </a-layout-content>
 
-        <a-typography-title :level="5" style="margin-top: 18px">AI教学建议</a-typography-title>
-        <div style="background: #fafafa; padding: 14px 18px; border-radius: 6px">
-          <a-typography-paragraph>
-            <div v-html="formatAdvice(aiAdvice)"></div>
-          </a-typography-paragraph>
-        </div>
-      </div>
-<!--      <div v-if="aiAdvice" style="margin-top: 24px">-->
-<!--        <a-typography-title :level="5">AI教学建议</a-typography-title>-->
-<!--        <a-alert :message="aiAdvice" type="success" show-icon />-->
-<!--      </div>-->
-    </a-card>
-  </div>
+      <a-layout-footer style="text-align: center">夜猫子工作室 ©2025</a-layout-footer>
+    </a-layout>
+  </a-layout>
 </template>
 
 <script lang="ts" setup>
-import { ref,watch  } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { message } from 'ant-design-vue'
-import axios from 'axios'
-import { addPracticeRecord, fullPredict } from '@/api/practiceController.ts'
+import { addPracticeRecord, askAi, fullPredict } from '@/api/practiceController.ts'
 import { useConfigStore } from '@/stores/cslConfig.ts'
-import router from '@/router'
+import GlobalSider from '@/components/GlobalSider.vue'
+import { predict } from '@/api/predictionController.ts'
 
 const targetText = ref('')
 const videoRef = ref<HTMLVideoElement | null>(null)
@@ -104,6 +238,9 @@ const aiAdvice = ref('')
 const store = useConfigStore()
 const previewUrl = ref('')
 const predictionParsed = ref<any>(null)
+const answer = ref('')
+const question = ref('')
+
 const startRecording = async () => {
   stream = await navigator.mediaDevices.getUserMedia({ video: true })
   if (videoRef.value) videoRef.value.srcObject = stream
@@ -193,7 +330,7 @@ const submitPractice = async () => {
       targetText: targetText.value,
       aiAdvice: aiAdvice.value,
       predictJson: res.data.prediction,
-      videoUrl:"http://localhost:8000/videos/"+predictionParsed.value.filename,
+      videoUrl: 'http://localhost:8000/videos/' + predictionParsed.value.filename,
     })
     message.success('已获取AI建议并保存记录')
   } catch (e: any) {
@@ -211,11 +348,125 @@ function formatAdvice(text: string) {
   if (!text) return ''
   return text.replace(/###/g, '<br/><b style="font-size:16px;">▪</b> ').replace(/\n/g, '<br/>')
 }
+const handleAsk = async () => {
+  if (!question.value) {
+    message.warning('请输入问题')
+    return
+  }
+  loading.value = true
+  answer.value = ''
+  try {
+    const res = await askAi({ question: question.value })
+    // 兼容后端返回格式
+    answer.value = res.data?.answer || res.data || 'AI未返回答复'
+    message.success('已获取AI回答')
+  } catch (e: any) {
+    answer.value = e?.response?.data?.message || e.message || '提问失败'
+    message.error('提问失败，请重试')
+  } finally {
+    loading.value = false
+  }
+}
+const handlePredict = async () => {
+  if (
+    !store.selectedModel ||
+    !store.selectedWeight ||
+    (store.selectedVideoStyle === '上传视频' && !store.uploadedVideo) ||
+    (store.selectedVideoStyle === '录制视频' && !store.recordedVideo) ||
+    (store.selectedVideoStyle === 'CSL测试集' && !store.selectedCSLVideo)
+  ) {
+    message.warning('请配置模型、权重和视频')
+    return
+  }
+
+  loading.value = true
+  try {
+    let res
+    if (store.selectedVideoStyle === 'CSL测试集') {
+      // 传递测试视频路径
+      res = await predict({
+        model: store.selectedModel,
+        weight: store.selectedWeight,
+        videoStyle: 'CSL测试集',
+        centercrop: false,
+        videoPath: `data/ptov/${store.selectedCSLVideo}`,
+      })
+      console.log(res.data)
+    } else if (store.selectedVideoStyle === '上传视频') {
+      // 上传视频
+      res = await predict(
+        {
+          model: store.selectedModel,
+          weight: store.selectedWeight,
+          videoStyle: store.selectedVideoStyle,
+          centercrop: false,
+        },
+        store.uploadedVideo,
+      )
+      console.log(res.data)
+      question.value="上传视频文件，通过算法预测结果为"+res.data.results+",请给出合理的智能指导意见。"
+      console.log(question.value)
+    } else if (store.selectedVideoStyle === '录制视频') {
+      res = await predict(
+        {
+          model: store.selectedModel,
+          weight: store.selectedWeight,
+          videoStyle: '录制视频',
+          centercrop: false,
+        },
+        store.recordedVideo,
+      )
+      console.log(res.data)
+    }
+    store.setPrediction(res.data)
+    message.success('识别完成')
+  } catch (e) {
+    message.error('识别失败，请检查配置')
+  } finally {
+    loading.value = false
+  }
+}
+const handleClearPrediction = () => {
+  store.setPrediction(null)
+}
+watch(
+  () => store.selectedModel,
+  (val) => {
+    store.setPrediction(null) // 清空预测结果
+  },
+  { immediate: true },
+)
+const videoPreviewUrl = computed(() => {
+  if (store.selectedVideoStyle === '上传视频' && store.uploadedVideo) {
+    return URL.createObjectURL(store.uploadedVideo)
+  }
+  if (store.selectedVideoStyle === 'CSL测试集' && store.selectedCSLVideo) {
+    return `/data/ptov/${store.selectedCSLVideo}`
+  }
+  return ''
+})
+const handleUpload = async ({ file }: { file: File }) => {
+  store.setUploadedVideo(file)
+}
+function formatAnswer(text: string) {
+  if (!text) return ''
+  // 可对AI返回做简单格式化（如带markdown的再完善）
+  return text.replace(/###/g, '<br/><b style="font-size:16px;">▪</b> ').replace(/\n/g, '<br/>')
+}
+const cslVideoOptions = computed(() =>
+  store.cslVideos.map((video) => ({ value: video, label: video })),
+)
 </script>
 
 <style scoped>
 .practice-main {
   max-width: 620px;
   margin: 36px auto;
+}
+
+.sider {
+  background: #fff;
+  padding-top: 20px;
+  border-right: 0.5px solid #eee;
 }
 </style>

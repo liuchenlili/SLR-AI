@@ -1,6 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
-import HomePage from '@/pages/HomePage.vue'
 import UserLoginPage from '@/pages/user/UserLoginPage.vue'
 import UserRegisterPage from '@/pages/user/UserRegisterPage.vue'
 import UserInfoPage from '@/pages/user/UserInfoPage.vue'
@@ -9,6 +7,7 @@ import PracticePage from '@/pages/PracticePage.vue'
 import PracticeRecordList from '@/pages/PracticeRecordList.vue'
 import UserManagePage from '@/pages/admin/UserManagePage.vue'
 import LearnPage from '@/pages/learn/LearnPage.vue'
+import RealtimePage from '@/pages/RealtimePage.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -37,6 +36,11 @@ const router = createRouter({
       path: '/practice',
       name: '练习',
       component: PracticePage,
+    },
+    {
+      path: '/real',
+      name: '实时识别',
+      component: RealtimePage,
     },
     {
       path: '/learn',

@@ -5,7 +5,7 @@
         <GlobalHeader />
       </a-layout-header>
       <a-layout>
-        <GlobalSider class="sider" />
+
         <a-layout-content class="content">
           <a-config-provider :locale="zhCN">
             <router-view />

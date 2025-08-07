@@ -2,8 +2,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 import UserLoginPage from '@/pages/user/UserLoginPage.vue'
 import UserRegisterPage from '@/pages/user/UserRegisterPage.vue'
 import UserInfoPage from '@/pages/user/UserInfoPage.vue'
-import MainContent from '@/pages/MainContent.vue'
-import PracticePage from '@/pages/PracticePage.vue'
+import ModelContent from '@/pages/ModelContent.vue'
+import HomePage from '@/pages/HomePage.vue'
+import PracticePageNew from '@/pages/PracticePage.vue'
 import PracticeRecordList from '@/pages/PracticeRecordList.vue'
 import UserManagePage from '@/pages/admin/UserManagePage.vue'
 import LearnPage from '@/pages/learn/LearnPage.vue'
@@ -15,7 +16,12 @@ const router = createRouter({
     {
       path: '/',
       name: 'home',
-      component: MainContent,
+      component: HomePage,
+    },
+    {
+      path: '/models',
+      name: '模型指标',
+      component: ModelContent,
     },
     {
       path: '/user/login',
@@ -35,7 +41,7 @@ const router = createRouter({
     {
       path: '/practice',
       name: '练习',
-      component: PracticePage,
+      component: PracticePageNew,
     },
     {
       path: '/real',

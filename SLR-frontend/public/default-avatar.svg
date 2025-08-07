@@ -1,0 +1,75 @@
+<svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- 背景渐变 -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6a9f7a"/>
+      <stop offset="50%" style="stop-color:#7ba885"/>
+      <stop offset="100%" style="stop-color:#5a8a6a"/>
+    </linearGradient>
+    
+    <!-- 人物肤色渐变 -->
+    <linearGradient id="skinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffeaa7"/>
+      <stop offset="100%" style="stop-color:#fdcb6e"/>
+    </linearGradient>
+    
+    <!-- 衣服渐变 -->
+    <linearGradient id="clothGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#74b9ff"/>
+      <stop offset="100%" style="stop-color:#0984e3"/>
+    </linearGradient>
+    
+    <!-- 头发渐变 -->
+    <linearGradient id="hairGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6c5ce7"/>
+      <stop offset="100%" style="stop-color:#5f3dc4"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景圆形 -->
+  <circle cx="60" cy="60" r="60" fill="url(#bgGradient)"/>
+  
+  <!-- 外圈装饰 -->
+  <circle cx="60" cy="60" r="58" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+  <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+  
+  <!-- 人物身体 -->
+  <ellipse cx="60" cy="95" rx="25" ry="18" fill="url(#clothGradient)"/>
+  
+  <!-- 人物头部 -->
+  <circle cx="60" cy="45" r="20" fill="url(#skinGradient)"/>
+  
+  <!-- 头发 -->
+  <path d="M40 35 Q60 25 80 35 Q75 30 60 28 Q45 30 40 35" fill="url(#hairGradient)"/>
+  
+  <!-- 眼睛 -->
+  <ellipse cx="52" cy="42" rx="2.5" ry="3" fill="#2d3436"/>
+  <ellipse cx="68" cy="42" rx="2.5" ry="3" fill="#2d3436"/>
+  
+  <!-- 眼睛高光 -->
+  <circle cx="53" cy="41" r="0.8" fill="white"/>
+  <circle cx="69" cy="41" r="0.8" fill="white"/>
+  
+  <!-- 鼻子 -->
+  <ellipse cx="60" cy="47" rx="1" ry="1.5" fill="rgba(253, 203, 110, 0.8)"/>
+  
+  <!-- 嘴巴 -->
+  <path d="M55 52 Q60 55 65 52" stroke="#e17055" stroke-width="2" fill="none" stroke-linecap="round"/>
+  
+  <!-- 腮红 -->
+  <circle cx="45" cy="48" r="3" fill="rgba(255, 107, 107, 0.3)"/>
+  <circle cx="75" cy="48" r="3" fill="rgba(255, 107, 107, 0.3)"/>
+  
+  <!-- 装饰星星 -->
+  <g opacity="0.6">
+    <path d="M25 25 L27 30 L32 30 L28 34 L30 39 L25 36 L20 39 L22 34 L18 30 L23 30 Z" fill="white" transform="scale(0.4)"/>
+    <path d="M95 80 L97 85 L102 85 L98 89 L100 94 L95 91 L90 94 L92 89 L88 85 L93 85 Z" fill="white" transform="scale(0.3)"/>
+    <path d="M15 80 L17 85 L22 85 L18 89 L20 94 L15 91 L10 94 L12 89 L8 85 L13 85 Z" fill="white" transform="scale(0.25)"/>
+  </g>
+  
+  <!-- 手语符号装饰 -->
+  <g transform="translate(85, 20)" opacity="0.4">
+    <circle r="6" fill="none" stroke="white" stroke-width="1.5"/>
+    <path d="M-3 -3 L3 3 M3 -3 L-3 3" stroke="white" stroke-width="1.5"/>
+  </g>
+</svg>

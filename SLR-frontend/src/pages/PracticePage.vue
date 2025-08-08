@@ -145,14 +145,48 @@
 
           <div v-if="uploadedVideo" class="video-preview">
             <video :src="uploadedVideoUrl" controls class="video-player" />
+          </div>
+          <div v-if="uploadedVideo" style="display: flex; align-items: flex-end; justify-content: center;margin-top: 10px">
             <button
+              v-if="question==''"
               class="btn-primary"
               @click="analyzeUploadedVideo"
               :disabled="loading || !store.selectedModel || !store.selectedWeight"
             >
               {{ loading ? '分析中...' : '开始分析' }}
             </button>
+            <button
+              v-else
+              class="btn-primary"
+              style="margin-top: 20px;margin-left: 12px"
+              @click="handleAsk"
+              :disabled="question==''"
+            > {{ loading ? '获取中...' : '获取智能评价' }}</button>
           </div>
+          <div v-if="predictionResult" class="result-card" >
+            <h3 class="card-title">识别结果</h3>
+            <div v-if="predictionResult" class="prediction-list">
+              <div
+                v-for="(item, index) in predictionResult"
+                :key="index"
+                class="prediction-item"
+              >
+                <span class="rank">{{ index + 1 }}</span>
+                <span class="word">{{ item[0] }}</span>
+                <span class="confidence">{{ item[1] }}</span>
+              </div>
+            </div>
+          </div>
+          <div v-if="answer" style="margin-top: 24px;">
+            <a-typography-title :level="5">AI答复</a-typography-title>
+            <div style="background: #fafafa; padding: 14px 18px; border-radius: 6px;">
+              <a-typography-paragraph>
+                <div v-html="formatAdvice(answer)"></div>
+              </a-typography-paragraph>
+            </div>
+          </div>
+
+
         </div>
       </div>
 
@@ -170,8 +204,10 @@
             </select>
           </div>
 
-          <div v-if="selectedTestVideo" class="video-preview">
+          <div v-if="selectedTestVideo" class="video-preview" >
             <video :src="`/data/ptov/${selectedTestVideo}`" controls class="video-player" />
+          </div>
+          <div  v-if="selectedTestVideo"  style="display: flex;margin-top: 20px;justify-content: center;">
             <button
               class="btn-primary"
               @click="analyzeTestVideo"
@@ -180,6 +216,21 @@
               {{ loading ? '分析中...' : '开始分析' }}
             </button>
           </div>
+          <div v-if="predictionResult" class="result-card"  >
+            <h3 class="card-title">识别结果</h3>
+            <div v-if="predictionResult" class="prediction-list">
+              <div
+                v-for="(item, index) in predictionResult"
+                :key="index"
+                class="prediction-item"
+              >
+                <span class="rank">{{ index + 1 }}</span>
+                <span class="word">{{ item[0] }}</span>
+                <span class="confidence">{{ item[1] }}</span>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -191,6 +242,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { message } from 'ant-design-vue'
 import { useConfigStore } from '@/stores/cslConfig.ts'
 import { predict } from '@/api/predictionController.ts'
+import { addPracticeRecord, askAi, fullPredict } from '@/api/practiceController.ts'
 
 const store = useConfigStore()
 
@@ -207,7 +259,11 @@ const uploadedVideo = ref<File | null>(null)
 const selectedTestVideo = ref('')
 const predictionResult = ref(null)
 const aiAdvice = ref('')
-
+const answer = ref('')
+const question = ref('')
+const recordedChunks = ref<Blob[]>([])
+const predictionParsed = ref<any>(null)
+let recorder: MediaRecorder | null = null
 // 计算属性
 const uploadedVideoUrl = computed(() => {
   return uploadedVideo.value ? URL.createObjectURL(uploadedVideo.value) : ''
@@ -254,15 +310,36 @@ const resetAll = () => {
   uploadedVideo.value = null
   selectedTestVideo.value = ''
   previewUrl.value = ''
+  question.value = ''
+  answer.value = ''
 }
+
 
 const startRecording = async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+
     if (videoRef.value) {
       videoRef.value.srcObject = stream
     }
+    recorder = new MediaRecorder(stream, { mimeType: 'video/webm' })
+    recordedChunks.value = []
     recording.value = true
+    recorder.ondataavailable = (e: BlobEvent) => recordedChunks.value.push(e.data)
+    recorder.onstop = () => {
+      recording.value = false
+      if (stream) stream.getTracks().forEach((track) => track.stop())
+      const blob = new Blob(recordedChunks.value, { type: 'video/webm' })
+      if (blob.size < 1024) {
+        message.error('录制失败，文件为空')
+        return
+      }
+      recordedVideo.value = new File([blob], 'practice_record.webm', { type: 'video/webm' })
+      if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
+      previewUrl.value = URL.createObjectURL(recordedVideo.value)
+      console.log('预览URL:', previewUrl.value)
+    }
+    recorder.start()
     message.success('开始录制')
   } catch (error) {
     message.error('无法访问摄像头')
@@ -274,8 +351,11 @@ const stopRecording = () => {
     const stream = videoRef.value.srcObject as MediaStream
     stream.getTracks().forEach(track => track.stop())
   }
-  recording.value = false
-  message.success('录制结束')
+  if (recorder && recording.value) {
+    recorder.stop()
+    console.log('目标', targetText.value, '视频', recordedVideo.value)
+    message.success('录制结束')
+  }
 }
 
 const triggerFileInput = () => {
@@ -303,6 +383,7 @@ const submitPractice = async () => {
   }
 
   loading.value = true
+  aiAdvice.value = ''
   try {
     // 这里应该调用识别API
     // const res = await predict({
@@ -311,9 +392,36 @@ const submitPractice = async () => {
     //   videoStyle: '录制视频',
     //   centercrop: false,
     // }, recordedVideo.value)
-
+    // 1.  只需要提交目标文本（和其它参数）
+    const params = {
+      targetText: targetText.value,
+      model: store.selectedModel, // 如需指定
+      weight: store.selectedWeight,
+      videoStyle: '录制视频',
+      centercrop: false,
+    }
+    // 2. body 可为空对象
+    const body = {}
+    // 3. 直接调用 fullPredict
+    const res = await fullPredict(params, body, recordedVideo.value)
+    if (res.data.prediction) {
+      try {
+        predictionParsed.value = JSON.parse(res.data.prediction)
+        predictionResult.value = predictionParsed.value.results
+      } catch {
+        predictionResult.value = null
+      }
+    }
+    console.log("http://localhost:8000/videos/"+predictionParsed.value.filename)
     message.success('练习提交成功')
-    // predictionResult.value = res.data.results
+    aiAdvice.value = res.data.aiAdvice || 'AI未返回建议'
+    await addPracticeRecord({
+      targetText: targetText.value,
+      aiAdvice: aiAdvice.value,
+      predictJson: res.data.prediction,
+      videoUrl:"http://localhost:8000/videos/"+predictionParsed.value.filename,
+    })
+    message.success('已获取AI建议并保存记录')
   } catch (error) {
     message.error('提交失败，请重试')
   } finally {
@@ -321,6 +429,26 @@ const submitPractice = async () => {
   }
 }
 
+
+const handleAsk = async () => {
+  if (!question.value) {
+    message.warning('请输入问题')
+    return
+  }
+  loading.value = true
+  answer.value = ''
+  try {
+    const res = await askAi({ question: question.value })
+    // 兼容后端返回格式
+    answer.value = res.data?.answer || res.data || 'AI未返回答复'
+    message.success('已获取AI回答')
+  } catch (e: any) {
+    answer.value = e?.response?.data?.message || e.message || '提问失败'
+    message.error('提问失败，请重试')
+  } finally {
+    loading.value = false
+  }
+}
 const analyzeUploadedVideo = async () => {
   if (!store.selectedModel || !store.selectedWeight) {
     message.warning('请先选择模型和权重')
@@ -332,15 +460,17 @@ const analyzeUploadedVideo = async () => {
   loading.value = true
   try {
     // 调用分析API
-    // const res = await predict({
-    //   model: store.selectedModel,
-    //   weight: store.selectedWeight,
-    //   videoStyle: '上传视频',
-    //   centercrop: false,
-    // }, uploadedVideo.value)
+    const res = await predict({
+      model: store.selectedModel,
+      weight: store.selectedWeight,
+      videoStyle: '上传视频',
+      centercrop: false,
+    }, uploadedVideo.value)
 
     message.success('分析完成')
-    // predictionResult.value = res.data.results
+    predictionResult.value = res.data.results
+    question.value="上传视频文件，通过算法预测结果为"+res.data.results+",请给出合理的智能指导意见。"
+    store.setPrediction(res.data)
   } catch (error) {
     message.error('分析失败，请重试')
   } finally {
@@ -359,16 +489,18 @@ const analyzeTestVideo = async () => {
   loading.value = true
   try {
     // 调用分析API
-    // const res = await predict({
-    //   model: store.selectedModel,
-    //   weight: store.selectedWeight,
-    //   videoStyle: 'CSL测试集',
-    //   centercrop: false,
-    //   videoPath: `data/ptov/${selectedTestVideo.value}`,
-    // })
+    const res = await predict({
+      model: store.selectedModel,
+      weight: store.selectedWeight,
+      videoStyle: 'CSL测试集',
+      centercrop: false,
+      videoPath: `data/ptov/${selectedTestVideo.value}`,
+    })
 
     message.success('分析完成')
-    // predictionResult.value = res.data.results
+    predictionResult.value = res.data.results
+
+    store.setPrediction(res.data)
   } catch (error) {
     message.error('分析失败，请重试')
   } finally {
@@ -387,11 +519,14 @@ watch(
     if (val) {
       await store.fetchWeights()
       store.selectedWeight = store.weights[0] || ''
+      store.prediction=null // 清空预测结果
+      question.value = '';
+      answer.value = '';
+      aiAdvice.value = '';
     }
   },
   { immediate: true }
 )
-
 onMounted(async () => {
   // 如果还没有选中模型，自动选择第一个
   if (!store.selectedModel && store.models.length > 0) {
@@ -772,5 +907,14 @@ onMounted(async () => {
     flex-direction: column;
     align-items: center;
   }
+}
+
+.video-preview {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+  width: 100%;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
 }
 </style>

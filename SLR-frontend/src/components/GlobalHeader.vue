@@ -112,7 +112,14 @@ const isActive = (path: string) => {
   if (path === '/') {
     return route.path === '/'
   }
-  return route.path.startsWith(path)
+  // 找出所有与当前路由匹配的候选项（完全等于 或 作为前缀）
+  const candidates = navItems.value
+    .map(i => i.path)
+    .filter(p => route.path === p || route.path.startsWith(p + '/'))
+
+  // 取路径最长的那个作为“当前高亮项”
+  const best = candidates.sort((a, b) => b.length - a.length)[0]
+  return best === path
 }
 
 // 切换下拉菜单
